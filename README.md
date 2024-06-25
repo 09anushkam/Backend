@@ -41,19 +41,21 @@ npm i axios
 
 - Connectivity :  
 to get data of backend in frontend we use proxy  
-vite.config.js -  
-export default defineConfig({  
-    server:{  
-        proxy:{  
-            '/api':`http://localhost:8000`,  
-        },  
-    },  
-    plugins:[react()],  
-})  
+vite.config.js -
+
+        export default defineConfig({  
+            server:{  
+                proxy:{  
+                    '/api':`http://localhost:8000`,  
+                },  
+            },  
+            plugins:[react()],  
+        });  
 
 server.js -  
-// middleware - if we move `dist` of frontend to backend (but actually this is a bad practice)  
-// app.use(express.static("dist"))  
+
+    // middleware - if we move `dist` of frontend to backend (but actually this is a bad practice)  
+    // app.use(express.static("dist"))  
 
 RUN USING - `num run dev`  
 
@@ -105,42 +107,42 @@ so use async await while connecting db
 
 - src/db/connection.js -  
 
-import mongoose from "mongoose";
-import { DB_NAME } from "../constants";
+        import mongoose from "mongoose";
+        import { DB_NAME } from "../constants";
 
-const connectDB=async()=>{
-    try {
-        const connectionInstance=await mongoose.connect(`${process.env.MONGO_URL}/${DB_NAME}`);
-        console.log(`\n MongoDB Connected! DB HOST : ${connectionInstance.connection.host}`);
-    } catch (error) {
-        console.log("MONGODB connection error ",error);
-        process.exit(1);
-    }
-}
+        const connectDB=async()=>{
+            try {
+                const connectionInstance=await mongoose.connect(`${process.env.MONGO_URL}/${DB_NAME}`);
+                console.log(`\n MongoDB Connected! DB HOST : ${connectionInstance.connection.host}`);
+            } catch (error) {
+                console.log("MONGODB connection error ",error);
+                process.exit(1);
+            }
+        }
 
 export default connectDB;
 
 - package.json -  
 
-  "scripts": {
-    "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
-  },
+          "scripts": {
+            "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
+          },
 
 - index.js -  
 
-// require('dotenv').config({path:'./env'})
-import dotenv from "dotenv"
-import connectDB from "./db/connection.js";
+        // require('dotenv').config({path:'./env'})
+        import dotenv from "dotenv"
+        import connectDB from "./db/connection.js";
 
-// .env confige
+        // .env config
 
-dotenv.config({
-    path:'./env'
-})
+        dotenv.config({
+            path:'./env'
+        });
 
-// calling connectDB
+        // calling connectDB
 
-connectDB()
+        connectDB()
 
 ## Lec 7 - Custom Api  
 
@@ -157,111 +159,111 @@ it has 4 parameteres - (err,req,res,next)
 
 - src/app.js -  
 
-import express from "express"
-import cors from "cors"
-import cookieParser from "cookie-parser"
+        import express from "express"
+        import cors from "cors"
+        import cookieParser from "cookie-parser"
 
-const app=express();
+        const app=express();
 
-// middlewares
-app.use(cors({origin:process.env.CORS_ORIGIN,credentials:true}));
-app.use(express.json({limit:"16kb"}));
-app.use(express.urlencoded({extended:true,limit:"16kb"})); // for spaces in url -> + or %20
-app.use(express.static("public"));
-app.use(cookieParser());
+        // middlewares
+        app.use(cors({origin:process.env.CORS_ORIGIN,credentials:true}));
+        app.use(express.json({limit:"16kb"}));
+        app.use(express.urlencoded({extended:true,limit:"16kb"})); // for spaces in url -> + or %20
+        app.use(express.static("public"));
+        app.use(cookieParser());
 
-export {app}
+        export {app}
 
 - index.js -  
 
-// require('dotenv').config({path:'./env'})
-import dotenv from "dotenv"
-import connectDB from "./db/connection.js";
+        // require('dotenv').config({path:'./env'})
+        import dotenv from "dotenv"
+        import connectDB from "./db/connection.js";
 
-// .env config
-dotenv.config({
-    path:'./env'
-});
+        // .env config
+        dotenv.config({
+            path:'./env'
+        });
 
-// app
-import {app} from "./app.js"
+        // app
+        import {app} from "./app.js"
 
-// calling connectDB
-connectDB()
-.then(()=>{
-    app.listen(process.env.PORT || 8000,()=>{
-        console.log(`Server is running at port : ${process.env.PORT}`);
-    })
-})
-.catch((err)=>{
-    console.log("MONGODB Connection failed !!",err);
-});
+        // calling connectDB
+        connectDB()
+        .then(()=>{
+            app.listen(process.env.PORT || 8000,()=>{
+                console.log(`Server is running at port : ${process.env.PORT}`);
+            })
+        })
+        .catch((err)=>{
+            console.log("MONGODB Connection failed !!",err);
+        });
 
 - src/utils/asyncHandler.js -  
 
-// Async await and try catch
-// closure - func return func
-const asyncHandler=(func)=>async(req,res,next)=>{
-    try {
-        await func(req,res,next);
-    } catch (error) {
-        res.status(err.code || 500).json({
-            success:false,
-            message:err.message,
-        });
-    }
-}
+        // Async await and try catch
+        // closure - func return func
+        const asyncHandler=(func)=>async(req,res,next)=>{
+            try {
+                await func(req,res,next);
+            } catch (error) {
+                res.status(err.code || 500).json({
+                    success:false,
+                    message:err.message,
+                });
+            }
+        }
 
-// Promises
-const asyncHandler=(requestHandler)=>{
-    return (req,res,next)=>{
-        Promise
-        .resolve(requestHandler(req,res,next))
-        .catch((err)=>next(err))
-    }
-}
+        // Promises
+        const asyncHandler=(requestHandler)=>{
+            return (req,res,next)=>{
+                Promise
+                .resolve(requestHandler(req,res,next))
+                .catch((err)=>next(err))
+            }
+        }
 
-export {asyncHandler}
+        export {asyncHandler}
 
 - src/utils/ApiError.js -  
 
-class ApiError extends Error{
-    constructor(
-        statusCode,
-        message="Something went error",
-        error=[],
-        statck=""
-    ){
-        super(message)
-        this.statusCode=statusCode
-        this.data=null
-        this.message=message
-        this.success=false;
-        this.errors=errors
+        class ApiError extends Error{
+            constructor(
+                statusCode,
+                message="Something went error",
+                error=[],
+                statck=""
+            ){
+                super(message)
+                this.statusCode=statusCode
+                this.data=null
+                this.message=message
+                this.success=false;
+                this.errors=errors
 
-        if(statck){
-            this.stack=statck;
+                if(statck){
+                    this.stack=statck;
+                }
+                else{
+                    Error.captureStackTrace(this,this.constructor);
+                }
+            }
         }
-        else{
-            Error.captureStackTrace(this,this.constructor);
-        }
-    }
-}
 
-export {ApiError}
+        export {ApiError}
 
 - src/utils/ApiResponse.js -  
 
-class ApiResponse{
-    constructor(statusCode,data,message="Success"){
-        this.statusCode=statusCode
-        this.data=data
-        this.message=message
-        this.success=statusCode < 400
-    }
-}
+        class ApiResponse{
+            constructor(statusCode,data,message="Success"){
+                this.statusCode=statusCode
+                this.data=data
+                this.message=message
+                this.success=statusCode < 400
+            }
+        }
 
-export {ApiResponse};
+        export {ApiResponse};
 
 ## Lec 8 - User and Video Model  
 
@@ -344,53 +346,53 @@ in .env file
 
 - src/utils/cloudinary.js -  
 
-import { v2 as cloudinary } from 'cloudinary';
-import fs from "fs"
+        import { v2 as cloudinary } from 'cloudinary';
+        import fs from "fs"
 
-cloudinary
-.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret:process.env.CLOUDINARY_API_SECRET,  
-});
-
-const uploadOnCloudinary=async (localFilePath)=>{
-    try {
-        if(!localFilePath) return null
-        // upload the file on cloudinary
-        const response=await cloudinary.uploader.upload(localFilePath,{
-            resource_type:'auto'
+        cloudinary
+        .config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret:process.env.CLOUDINARY_API_SECRET,  
         });
-        // file has been uploaded successfully
-        fs.unlinkSync(localFilePath);
-        return response;
-    }
 
-    catch (error) {
-        fs.unlinkSync(localFilePath); //removes the locally saved temporary file as the operation gets failed
-        return null;
-    }
-}
+        const uploadOnCloudinary=async (localFilePath)=>{
+            try {
+                if(!localFilePath) return null
+                // upload the file on cloudinary
+                const response=await cloudinary.uploader.upload(localFilePath,{
+                    resource_type:'auto'
+                });
+                // file has been uploaded successfully
+                fs.unlinkSync(localFilePath);
+                return response;
+            }
 
-export {uploadOnCloudinary};
+            catch (error) {
+                fs.unlinkSync(localFilePath); //removes the locally saved temporary file as the operation gets failed
+                return null;
+            }
+        }
+
+        export {uploadOnCloudinary};
 
 - src/middlewares/multer.middlewares.js -  
 
-import multer from "multer"
+        import multer from "multer"
 
-// middleware
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./public/temp");
-  },
-  filename: function (req, file, cb) {
-    // const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    // cb(null, file.fieldname + '-' + uniqueSuffix)
-    cb(null, file.originalname);
-  }
-});
+        // middleware
+        const storage = multer.diskStorage({
+          destination: function (req, file, cb) {
+            cb(null, "./public/temp");
+          },
+          filename: function (req, file, cb) {
+            // const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+            // cb(null, file.fieldname + '-' + uniqueSuffix)
+            cb(null, file.originalname);
+          }
+        });
 
-export const upload = multer({ storage: storage });
+        export const upload = multer({ storage: storage });
 
 ## Lec 10 - HTTP Crash course  
 
@@ -402,40 +404,40 @@ http methods - get,post,patch,put,delete
 
 - src/controllers/user.controllers.js -  
 
-import  { asyncHandler } from "../utils/asyncHandler.js"
+        import  { asyncHandler } from "../utils/asyncHandler.js"
 
-const registerUser=asyncHandler(async(req,res)=>{
-    res.status(200).json({
-        message:"ok",
-    });
-});
+        const registerUser=asyncHandler(async(req,res)=>{
+            res.status(200).json({
+                message:"ok",
+            });
+        });
 
-export {registerUser};
+        export {registerUser};
 
 - src/routes/user.routes.js -  
 
-import {Router} from "express"
-import { registerUser } from "../controllers/user.controllers.js";
+        import {Router} from "express"
+        import { registerUser } from "../controllers/user.controllers.js";
 
-const router=Router();
+        const router=Router();
 
-router
-.route("/register")
-.post(registerUser);
-
-export default router;
+        router
+        .route("/register")
+        .post(registerUser);
+    
+        export default router;
 
 ## Lec 12 - Logic Building  
 
 - src/routes/user.routes.js -  
 
-router
-.route("/register")
-.post(upload.fields([
-    {name:"avatar",maxCount:1,},
-    {name:"coverImage",maxCount:1},
-    ]),
-    registerUser);
+        router
+        .route("/register")
+        .post(upload.fields([
+            {name:"avatar",maxCount:1,},
+            {name:"coverImage",maxCount:1},
+            ]),
+            registerUser);
 
 - src/controllers/user.controllers.js -  
 
@@ -450,75 +452,75 @@ router
     // check for user creation  
     // return res  
 
-import  { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
-import { User } from "../models/user.models.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+        import  { asyncHandler } from "../utils/asyncHandler.js";
+        import { ApiError } from "../utils/ApiError.js";
+        import { User } from "../models/user.models.js";
+        import { uploadOnCloudinary } from "../utils/cloudinary.js";
+        import { ApiResponse } from "../utils/ApiResponse.js";
 
-const registerUser=asyncHandler(async(req,res)=>{
-    // get user details from frontend
-    const {fullName,email,username,password}=req.body;
+        const registerUser=asyncHandler(async(req,res)=>{
+            // get user details from frontend
+            const {fullName,email,username,password}=req.body;
 
-    // validation - fields not empty
-    if([fullName,email,username,password].some((field)=>field?.trim()==="")){
-        throw new ApiError(400,"All fields are required");
-    }
+            // validation - fields not empty
+            if([fullName,email,username,password].some((field)=>field?.trim()==="")){
+                throw new ApiError(400,"All fields are required");
+            }
 
-    // check if user already exists - check using username or email
-    const existedUser=await User.findOne({
-        $or: [ {username} , {email} ]
-    });
-    if(existedUser){
-        throw new ApiError(409,"User with same email or username already exists!");
-    }
+            // check if user already exists - check using username or email
+            const existedUser=await User.findOne({
+                $or: [ {username} , {email} ]
+            });
+            if(existedUser){
+                throw new ApiError(409,"User with same email or username already exists!");
+            }
 
-    // check for images, check for avtar
-    const avatarLocalPath=req.files?.avatar[0]?.path;
-    // const coverImageLocalPath=req.files?.coverImage[0]?.path;
+            // check for images, check for avtar
+            const avatarLocalPath=req.files?.avatar[0]?.path;
+            // const coverImageLocalPath=req.files?.coverImage[0]?.path;
 
-    let coverImageLocalPath;
-    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
-        coverImageLocalPath=req.files.coverImage[0].path;
-    }
+            let coverImageLocalPath;
+            if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
+                coverImageLocalPath=req.files.coverImage[0].path;
+            }
 
-    if(!avatarLocalPath){
-        throw new ApiError(400,"Avatar path is required");
-    }
+            if(!avatarLocalPath){
+                throw new ApiError(400,"Avatar path is required");
+            }
 
-    // upload them to cloudinary, avtar
-    const avatar=await uploadOnCloudinary(avatarLocalPath);
-    const coverImage=await uploadOnCloudinary(coverImageLocalPath);
+            // upload them to cloudinary, avtar
+            const avatar=await uploadOnCloudinary(avatarLocalPath);
+            const coverImage=await uploadOnCloudinary(coverImageLocalPath);
 
-    if(!avatar){
-        throw new ApiError(400,"Avatar file is required");
-    }
+            if(!avatar){
+                throw new ApiError(400,"Avatar file is required");
+            }
 
-    // create user object - create entry in db
-    const user=await User.create({
-        fullName,
-        avatar:avatar.url,
-        coverImage:coverImage?.url || "",
-        email,
-        password,
-        username:username.toLowerCase(),
-    });
+            // create user object - create entry in db
+            const user=await User.create({
+                fullName,
+                avatar:avatar.url,
+                coverImage:coverImage?.url || "",
+                email,
+                password,
+                username:username.toLowerCase(),
+            });
 
-    // remove password and refresh token field from response
-    const createdUser=await User.findById(user._id).select("-password -refreshToken");
+            // remove password and refresh token field from response
+            const createdUser=await User.findById(user._id).select("-password -refreshToken");
 
-    // check for user creation
-    if(!createdUser){
-        throw new ApiError(500,"Something went wrong");
-    }
+            // check for user creation
+            if(!createdUser){
+                throw new ApiError(500,"Something went wrong");
+            }
 
-    // return res
-    return res.status(200).json(
-        new ApiResponse(200,createdUser,"User registered Successfully"),
-    );
-});
+            // return res
+            return res.status(200).json(
+                new ApiResponse(200,createdUser,"User registered Successfully"),
+            );
+        });
 
-export {registerUser};
+        export {registerUser};
 
 ## Lec 13 - How to use postman for testing  
 
@@ -526,22 +528,22 @@ export {registerUser};
 
 - src/controllers/user.controllers.js -  
 
-// generate access token method
-const generateAccessAndRefreshTokens=async(userId)=>{
-    try {
-        const user=await User.findById(userId);
-        const accessToken=await user.generateAccessToken();
-        const refreshToken=await user.generateRefreshToken();
+        // generate access token method
+        const generateAccessAndRefreshTokens=async(userId)=>{
+            try {
+                const user=await User.findById(userId);
+                const accessToken=await user.generateAccessToken();
+                const refreshToken=await user.generateRefreshToken();
 
-        user.refreshToken=refreshToken; //storing refresh token in database
-        await user.save({validateBeforeSave:false});
+                user.refreshToken=refreshToken; //storing refresh token in database
+                await user.save({validateBeforeSave:false});
 
-        return {accessToken,refreshToken};
-    } 
-    catch (error) {
-        throw new ApiError(500,"Something went wrong while generating refresh and access token");
-    }
-}
+                return {accessToken,refreshToken};
+            } 
+            catch (error) {
+                throw new ApiError(500,"Something went wrong while generating refresh and access token");
+            }
+        }
 
 // Login Controller (loginUser) :  
 // req body->data  
@@ -551,185 +553,185 @@ const generateAccessAndRefreshTokens=async(userId)=>{
     // access and refresh tokens  
     // send cookie  
 
-const loginUser=asyncHandler(async(req,res)=>{
-    // req body->data
-    const {email,username,password}=req.body;
+        const loginUser=asyncHandler(async(req,res)=>{
+            // req body->data
+            const {email,username,password}=req.body;
 
-    // username or email
-    if(!username || !email){
-        throw new ApiError(400,"username or email is required");
-    }
+            // username or email
+            if(!username || !email){
+                throw new ApiError(400,"username or email is required");
+            }
 
-    // find the user based on their username or email
-    const user=await User.findOne({
-        $or: [ {username} , {email} ]
-    });
+            // find the user based on their username or email
+            const user=await User.findOne({
+                $or: [ {username} , {email} ]
+            });
 
-    if(!user){
-        throw new ApiError(404,"User does not exists");
-    }
+            if(!user){
+                throw new ApiError(404,"User does not exists");
+            }
 
-    // password check
-    const isPasswordValid=await user.isPasswordCorrect(password);
+            // password check
+            const isPasswordValid=await user.isPasswordCorrect(password);
 
-    if(!isPasswordValid){
-        throw new ApiError(401,"Invalid user credentials");
-    }
+            if(!isPasswordValid){
+                throw new ApiError(401,"Invalid user credentials");
+            }
 
-    // access and refresh tokens
-    const {accessToken,refreshToken}=await generateAccessAndRefreshTokens(user._id);
-    const loggedInUser=await User.findById(user._id).select("-password -refreshToken");
+            // access and refresh tokens
+            const {accessToken,refreshToken}=await generateAccessAndRefreshTokens(user._id);
+            const loggedInUser=await User.findById(user._id).select("-password -refreshToken");
 
-    // send cookie 
-    // cookie is modifiable by server only
-    const options={
-        httpOnly:true,
-        secure:true,
-    }
+            // send cookie 
+            // cookie is modifiable by server only
+            const options={
+                httpOnly:true,
+                secure:true,
+            }
 
-    return res
-    .status(200)
-    .cookie("accessToken",accessToken,options)
-    .cookie("refreshToken",refreshToken,options)
-    .json(new ApiResponse(200,{user:loggedInUser,accessToken,refreshToken},"User Logged In Successfully"));
+            return res
+            .status(200)
+            .cookie("accessToken",accessToken,options)
+            .cookie("refreshToken",refreshToken,options)
+            .json(new ApiResponse(200,{user:loggedInUser,accessToken,refreshToken},"User Logged In Successfully"));
 
-});
+        });
 
 - src/middlewares/auth.middlewares.js -  
 
-import {asyncHandler} from "../utils/asyncHandler.js"
-import {ApiError} from "../utils/ApiError.js"
-import jwt from "jsonwebtoken"
-import {User} from "../models/user.models.js"
+        import {asyncHandler} from "../utils/asyncHandler.js"
+        import {ApiError} from "../utils/ApiError.js"
+        import jwt from "jsonwebtoken"
+        import {User} from "../models/user.models.js"
 
-// verifyToken - Authorization - to get all info of user using token before user logout and save it for future reference
-export const verifyJWT=asyncHandler(async(req,res,next)=>{
+        // verifyToken - Authorization - to get all info of user using token before user logout and save it for future reference
+        export const verifyJWT=asyncHandler(async(req,res,next)=>{
 
-    try {
-        const token=req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","") //extracting token
+            try {
+                const token=req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","") //extracting token
     
-        if(!token){
-        throw new ApiError(401,"Unauthorized request");
-        }
+                if(!token){
+                throw new ApiError(401,"Unauthorized request");
+                }
     
-        const decodedToken=jwt.verify(token,process.env.ACCESS_TOKEN_SECRET);
+                const decodedToken=jwt.verify(token,process.env.ACCESS_TOKEN_SECRET);
     
-        const user=await User.findById(decodedToken._id).select("-password -refreshToken");
+                const user=await User.findById(decodedToken._id).select("-password -refreshToken");
     
-        if(!user){
-            throw new ApiError(401,"Invalid Access Token");
-        }
+                if(!user){
+                    throw new ApiError(401,"Invalid Access Token");
+                }
     
-        req.user=user; // now we have user object which we can use in log out
-        return next();
-    } 
+                req.user=user; // now we have user object which we can use in log out
+                return next();
+            } 
 
-    catch (error) {
-        throw new ApiError(401,error?.message||"Invalid access token");
-    }
-});
+            catch (error) {
+                throw new ApiError(401,error?.message||"Invalid access token");
+            }
+        });
 
-export {verifyJWT};
+        export {verifyJWT};
 
 - src/controllers/user.controllers.js -  
 
-const logoutUser=asyncHandler(async(req,res)=>{
+        const logoutUser=asyncHandler(async(req,res)=>{
 
-    await User.findByIdAndUpdate(
-        req.user._id,
-        { $set:{ refreshToken: undefined } },
-        { new:true },
-    );
+            await User.findByIdAndUpdate(
+                req.user._id,
+                { $set:{ refreshToken: undefined } },
+                { new:true },
+            );
 
-    const options={
-        httpOnly:true,
-        secure:true,
-    }
+            const options={
+                httpOnly:true,
+                secure:true,
+            }
 
-    // clear cookies
-    return res
-    .status(200)
-    .clearCookie("accessToken",options)
-    .clearCookie("refreshToken",options)
-    .json(200,{},"User Logged out")
-});
+            // clear cookies
+            return res
+            .status(200)
+            .clearCookie("accessToken",options)
+            .clearCookie("refreshToken",options)
+            .json(200,{},"User Logged out")
+        });
 
-// and export this logout  
+        export {logoutUser}  
 
 - src/controllers/user.controllers.js -  
 
-const refreshAccessToken=asyncHandler(async(req,res)=>{
-    const incomingrefreshToken=req.cookies.refreshToken || req.body.refreshToken;
+        const refreshAccessToken=asyncHandler(async(req,res)=>{
+            const incomingrefreshToken=req.cookies.refreshToken || req.body.refreshToken;
 
-    if(!incomingrefreshToken){
-        throw new ApiError(401,"Unauthorized Request");
-    }
+            if(!incomingrefreshToken){
+                throw new ApiError(401,"Unauthorized Request");
+            }
 
-    try {
-        const decodedToken=jwt.verify(incomingrefreshToken,process.env.REFRESH_TOKEN_SECRET);
+            try {
+                const decodedToken=jwt.verify(incomingrefreshToken,process.env.REFRESH_TOKEN_SECRET);
         
-        const user=await User.findById(decodedToken?._id);
+                const user=await User.findById(decodedToken?._id);
     
-        if(!user){
-            throw new ApiError(401,"Invalid Refresh Token");
-        }
+                if(!user){
+                    throw new ApiError(401,"Invalid Refresh Token");
+                }
     
-        if(incomingrefreshToken!==user?.refreshToken){
-            throw new ApiError(401,"Refresh token is expired or used");
-        }
+                if(incomingrefreshToken!==user?.refreshToken){
+                    throw new ApiError(401,"Refresh token is expired or used");
+                }
     
-        const options={
-            httpOnly:true,
-            secure:true,
-        }
+                const options={
+                    httpOnly:true,
+                    secure:true,
+                }
     
-        const {accessToken,newRefreshToken}=await generateAccessAndRefreshTokens(user._id);
+                const {accessToken,newRefreshToken}=await generateAccessAndRefreshTokens(user._id);
     
-        return res
-        .status(200)
-        .cookie("accessToken",accessToken)
-        .cookie("refreshToken",refreshToken)
-        .json(  
-            new ApiResponse(200,{accessToken,refreshToken:newRefreshToken},"Access Token refreshed successfully")
-        );
-    } catch (error) {
-        throw new ApiError(401,error?.message || "Invalid refresh token");
-    }
-});
+                return res
+                .status(200)
+                .cookie("accessToken",accessToken)
+                .cookie("refreshToken",refreshToken)
+                .json(  
+                    new ApiResponse(200,{accessToken,refreshToken:newRefreshToken},"Access Token refreshed successfully")
+                );
+            } catch (error) {
+                throw new ApiError(401,error?.message || "Invalid refresh token");
+            }
+        });
 
-// and export this refreshaccesstoken  
+        export {refreshAccessToken}  
 
 - src/routes/user.routes.js (login,logout routes are added) -  
 
-import { Router } from "express"
-import { registerUser,loginUser,logoutUser } from "../controllers/user.controllers.js";
-import { upload } from "../middlewares/multer.middlewares.js";
-import { verifyJWT } from "../middlewares/auth.middlewares.js";
+        import { Router } from "express"
+        import { registerUser,loginUser,logoutUser } from "../controllers/user.controllers.js";
+        import { upload } from "../middlewares/multer.middlewares.js";
+        import { verifyJWT } from "../middlewares/auth.middlewares.js";
 
-const router=Router();
+        const router=Router();
 
-router
-.route("/register")
-.post(upload.fields([
-    {name:"avatar",maxCount:1},
-    {name:"coverImage",maxCount:1},
-    ]),
-    registerUser);
+        router
+        .route("/register")
+        .post(upload.fields([
+            {name:"avatar",maxCount:1},
+            {name:"coverImage",maxCount:1},
+            ]),
+            registerUser);
 
-router
-.route("/login")
-.post(loginUser);
+        router
+        .route("/login")
+        .post(loginUser);
 
-// secured routes
-router
-.route("/logout")
-.post(verifyJWT,logoutUser);
+        // secured routes
+        router
+        .route("/logout")
+        .post(verifyJWT,logoutUser);
 
-router
-.route("/refresh-token")
-.post(refreshAccessToken);
+        router
+        .route("/refresh-token")
+        .post(refreshAccessToken);
 
-export default router;
+        export default router;
 
 ## Lec 15 - Update Controller  
 
@@ -738,68 +740,68 @@ but if u want to store that data it should be in the schema
 
 - src/controllers/user.controllers.js -  
 
-const changeCurrentPassword=asyncHandler(async(req,res)=>{
-    // take old and new password
-    const {oldPassword,newPassword,confirmPassword}=req.body;
+        const changeCurrentPassword=asyncHandler(async(req,res)=>{
+            // take old and new password
+            const {oldPassword,newPassword,confirmPassword}=req.body;
 
-    if(newPassword!==confirmPassword){
-        throw new ApiError(400,"New Password and Confirm Password did not match");
-    }
-    
-    // take old password of a user and check for their old password correction
-    const user=await User.findById(req.user?._id);
-    const isPasswordCorrect=await user.isPasswordCorrect(oldPassword);
-
-    if(!isPasswordCorrect){
-        throw new ApiError(400,"Invalid Old Password");
-    }
-
-    // now the new password is the current password of the user
-    user.password=newPassword;
-    await user.save({validateBeforeSave:false}); // avoiding validation for other information while saving password
-
-    // returning response
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,{},"Password Changed Successfully")
-    )
-});
-
-const getCurrentUser=asyncHandler(async(req,res)=>{
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,req.user,"current user fetched successfully")
-    )
-});
-
-const updateAccountDetails=asyncHandler(async(req,res)=>{
-    const {fullName,email}=req.body;
-
-    if(!fullName||!email){
-        throw new ApiError(400,"All fields are required");
-    }
-
-    const user=await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set:{
-                fullName,
-                email:email, //alternate syntax for previous line
+            if(newPassword!==confirmPassword){
+                throw new ApiError(400,"New Password and Confirm Password did not match");
             }
-        },
-        {new:true},
-    ).select("-password");
+    
+            // take old password of a user and check for their old password correction
+            const user=await User.findById(req.user?._id);
+            const isPasswordCorrect=await user.isPasswordCorrect(oldPassword);
 
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,user,"Account details updated successfully")
-    );
-});
+            if(!isPasswordCorrect){
+                throw new ApiError(400,"Invalid Old Password");
+            }
 
-const updateUserAvatar=asyncHandler(async(req,res)=>{
+            // now the new password is the current password of the user
+            user.password=newPassword;
+            await user.save({validateBeforeSave:false}); // avoiding validation for other information while saving password
+
+            // returning response
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200,{},"Password Changed Successfully")
+            )
+        });
+
+        const getCurrentUser=asyncHandler(async(req,res)=>{
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200,req.user,"current user fetched successfully")
+            )
+        });
+
+        const updateAccountDetails=asyncHandler(async(req,res)=>{
+            const {fullName,email}=req.body;
+
+            if(!fullName||!email){
+                throw new ApiError(400,"All fields are required");
+            }
+
+            const user=await User.findByIdAndUpdate(
+                req.user?._id,
+                {
+                    $set:{
+                        fullName,
+                        email:email, //alternate syntax for previous line
+                    }
+                },
+                {new:true},
+            ).select("-password");
+
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200,user,"Account details updated successfully")
+            );
+        });
+
+        const updateUserAvatar=asyncHandler(async(req,res)=>{
 
     // req.file comes from multer middleware
     const avatarLocalPath=req.file?.path;
