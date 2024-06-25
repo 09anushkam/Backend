@@ -803,70 +803,70 @@ but if u want to store that data it should be in the schema
 
         const updateUserAvatar=asyncHandler(async(req,res)=>{
 
-    // req.file comes from multer middleware
-    const avatarLocalPath=req.file?.path;
+            // req.file comes from multer middleware
+            const avatarLocalPath=req.file?.path;
     
-    if(!avatarLocalPath){
-        throw new ApiError(400,"Avatar file is missing");
-    }
-
-    const avatar=await uploadOnCloudinary(avatarLocalPath);
-
-    if(!avatar.url){
-        throw new ApiError(400,"Avatar file url is missing");
-    }
-
-    const user=await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set:{
-                avatar:avatar.url,
+            if(!avatarLocalPath){
+                throw new ApiError(400,"Avatar file is missing");
             }
-        },
-        {new:true},
-    ).select("-password");
 
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,user,"Avatar image updated successfully")
-    )
+            const avatar=await uploadOnCloudinary(avatarLocalPath);
 
-});
+            if(!avatar.url){
+                throw new ApiError(400,"Avatar file url is missing");
+            }
 
-const updateUserCoverImage=asyncHandler(async(req,res)=>{
+            const user=await User.findByIdAndUpdate(
+                req.user?._id,
+                {
+                    $set:{
+                        avatar:avatar.url,
+                    }
+                },
+                {new:true},
+            ).select("-password");
 
-    // req.file comes from multer middleware
-    const coverImageLocalPath=req.file?.path;
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200,user,"Avatar image updated successfully")
+            );
+
+          });
+
+        const updateUserCoverImage=asyncHandler(async(req,res)=>{
+
+            // req.file comes from multer middleware
+            const coverImageLocalPath=req.file?.path;
     
-    if(!coverImageLocalPath){
-        throw new ApiError(400,"Avatar file is missing");
-    }
-
-    const coverImage=await uploadOnCloudinary(coverImageLocalPath);
-
-    if(!coverImage.url){
-        throw new ApiError(400,"Avatar file url is missing");
-    }
-
-    const user=await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set:{
-                coverImage:coverImage.url,
+            if(!coverImageLocalPath){
+                throw new ApiError(400,"Avatar file is missing");
             }
-        },
-        {new:true},
-    ).select("-password");
 
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,user,"Cover image updated successfully")
-    )
-});
+            const coverImage=await uploadOnCloudinary(coverImageLocalPath);
 
-// export above functions  
+            if(!coverImage.url){
+                throw new ApiError(400,"Avatar file url is missing");
+            }
+
+            const user=await User.findByIdAndUpdate(
+                req.user?._id,
+                {
+                    $set:{
+                        coverImage:coverImage.url,
+                    }
+                },
+                {new:true},
+            ).select("-password");
+
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200,user,"Cover image updated successfully")
+            )
+        });
+
+        export {changeCurrentPassword,getCurrentUser, updateAccountDetails,updateUserAvatar,updateUserCoverImage}  
 
 ## Lec 16 - Subscription Schema  
 
@@ -909,268 +909,268 @@ and 1 means true which means we are passing their value -->
 
 - src/controllers/user.controllers.js -  
 
-// mongodb aggregation pipeline
+        // mongodb aggregation pipeline
 
-const getUserChannelProfile=asyncHandler(async(req,res)=>{
-    const {username}=req.params;
+        const getUserChannelProfile=asyncHandler(async(req,res)=>{
+            const {username}=req.params;
 
-    if(!username?.trim()){
-        throw new ApiError(400,"username is missing");
-    }
+            if(!username?.trim()){
+                throw new ApiError(400,"username is missing");
+            }
 
-    const channel=await User.aggregate([
-        {
-            $match:{
-                username: username?.toLowerCase()
-            }
-        }, 
-        {
-            $lookup:{
-                from:"subscriptions",
-                localField:"_id",
-                foreignField:"channel",
-                as:"subscribers"
-            }
-        }, // 1st pipeline
-        {
-            $lookup:{
-                from:"subscriptions",
-                localField:"_id",
-                foreignField:"subscriber",
-                as:"subscribedTo"
-            }
-        }, // 2nd pipeline
-        {
-            $addFields:{
-                subscribersCount:{
-                    $size:"$subscribers"
-                },
-                channelsSubscribedToCount:{
-                    $size:"$subscribedTo"
-                },
-                isSubscribed:{
-                    $cond:{
-                        if:{$in:[req.user?._id,"subscribers.subscriber"]},
-                        then:true,
-                        else:false,
+            const channel=await User.aggregate([
+                {
+                    $match:{
+                        username: username?.toLowerCase()
                     }
-                }
+                }, 
+                {
+                    $lookup:{
+                        from:"subscriptions",
+                        localField:"_id",
+                        foreignField:"channel",
+                        as:"subscribers"
+                    }
+                }, // 1st pipeline
+                {
+                    $lookup:{
+                        from:"subscriptions",
+                        localField:"_id",
+                        foreignField:"subscriber",
+                        as:"subscribedTo"
+                    }
+                }, // 2nd pipeline
+                {
+                    $addFields:{
+                        subscribersCount:{
+                            $size:"$subscribers"
+                        },
+                        channelsSubscribedToCount:{
+                            $size:"$subscribedTo"
+                        },
+                        isSubscribed:{
+                            $cond:{
+                                if:{$in:[req.user?._id,"subscribers.subscriber"]},
+                                then:true,
+                                else:false,
+                            }
+                        }
+                    }
+                }, // 3rd pipeline
+                {
+                    $project:{
+                        fullName:1,
+                        username:1,
+                        subscribersCount:1,
+                        channelsSubscribedToCount:1,
+                        avatar:1,
+                        coverImage:1,
+                        email:1,
+                    }
+                } // 4th pipeline
+            ]);  
+
+            if(!channel?.length){
+                throw new ApiError(404,"Channel does not exist");
             }
-        }, // 3rd pipeline
-        {
-            $project:{
-                fullName:1,
-                username:1,
-                subscribersCount:1,
-                channelsSubscribedToCount:1,
-                avatar:1,
-                coverImage:1,
-                email:1,
-            }
-        } // 4th pipeline
-    ]);  
 
-    if(!channel?.length){
-        throw new ApiError(404,"Channel does not exist");
-    }
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200,channel[0],"User channel fetched successfully")
+            );
+        });
 
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,channel[0],"User channel fetched successfully")
-    );
-});
-
-// export above functions  
+        export {getUserChannelProfile}  
 
 ## Lec 18 - Sub pipelines and routes  
 
 - src/controllers/user.controllers.js -  
 
-// sub pipeline (not understood)
+        // sub pipeline (not understood)
 
-const getWatchHistory=asyncHandler(async(req,res)=>{
-    const user=await User.aggregate([
-        {
-            $match:{
-                _id:new mongoose.Types.ObjectId(req.user._id) // imp
-            }
-        },
-        {
-            $lookup:{
-                from:"videos",
-                localField:"watchHistory",
-                foreignField:"_id",
-                as:"watchHistory", //
-                pipeline:[
-                    {
-                       $lookup:{
-                            from:"users",
-                            localField:"owner",
-                            foreignField:"_id",
-                            as:"owner", //
-                            pipeline:[
-                                {
-                                    $project:{
-                                        fullName:1,
-                                        username:1,
-                                        avatar:1,
-                                    }
-                                },
-                                {
-                                    $addFields:{
-                                        owner:{
-                                            $first:"$owner"
+        const getWatchHistory=asyncHandler(async(req,res)=>{
+            const user=await User.aggregate([
+                {
+                    $match:{
+                        _id:new mongoose.Types.ObjectId(req.user._id) // imp
+                    }
+                },
+                {
+                    $lookup:{
+                        from:"videos",
+                        localField:"watchHistory",
+                        foreignField:"_id",
+                        as:"watchHistory", //
+                        pipeline:[
+                            {
+                               $lookup:{
+                                    from:"users",
+                                    localField:"owner",
+                                    foreignField:"_id",
+                                    as:"owner", //
+                                    pipeline:[
+                                        {
+                                            $project:{
+                                                fullName:1,
+                                                username:1,
+                                                avatar:1,
+                                            }
+                                        },
+                                        {
+                                            $addFields:{
+                                                owner:{
+                                                    $first:"$owner"
+                                                }
+                                            }
                                         }
-                                    }
-                                }
-                            ]
-                       }
-                    },
-                ]
-            }
-        },
-    ]);
+                                    ]
+                               }
+                            },
+                        ]
+                    }
+                },
+            ]);
 
-    return res
-    .status()
-    .json(
-        new ApiResponse(200,user[0].watchHistory,"watch history fetched successfully")
-    );
-});
+            return res
+            .status()
+            .json(
+                new ApiResponse(200,user[0].watchHistory,"watch history fetched successfully")
+            );
+        });
 
-// export above functions  
+        export {getWatchHistory}
 
 - src/routes/user.routes.js -  
 
-// added new routes  
+        // added new routes  
 
-router
-.route("/change-password")
-.post(verifyJWT,changeCurrentPassword);
+        router
+        .route("/change-password")
+        .post(verifyJWT,changeCurrentPassword);
 
-router
-.route("/current-user")
-.get(verifyJWT,getCurrentUser);
+        router
+        .route("/current-user")
+        .get(verifyJWT,getCurrentUser);
 
-router
-.route("/update-account")
-.patch(verifyJWT,updateAccountDetails);
+        router
+        .route("/update-account")
+        .patch(verifyJWT,updateAccountDetails);
 
-router
-.route("/avatar")
-.patch(verifyJWT,upload.single("avatar"),updateUserAvatar);
+        router
+        .route("/avatar")
+        .patch(verifyJWT,upload.single("avatar"),updateUserAvatar);
 
-router
-.route("/cover-image")
-.patch(verifyJWT,upload.single("/coverImage"),updateUserCoverImage); // /-?
+        router
+        .route("/cover-image")
+        .patch(verifyJWT,upload.single("/coverImage"),updateUserCoverImage); // /-?
 
-router
-.route("/channel/:username")
-.get(verifyJWT,getUserChannelProfile);
+        router
+        .route("/channel/:username")
+        .get(verifyJWT,getUserChannelProfile);
 
-router
-.route("/history")
-.get(verifyJWT,getWatchHistory);
+        router
+        .route("/history")
+        .get(verifyJWT,getWatchHistory);
 
 ## Lec 19 - Like and Tweet Models  
 
 - src/models/comment.models.js -  
 
-import mongoose,{Schema} from "mongoose"
-import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2"
+        import mongoose,{Schema} from "mongoose"
+        import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2"
 
-const commentSchema=new Schema({
-    content:{
-        type:String,
-        required:true,
-    },
-    video:{
-        type:Schema.Types.ObjectId,
-        ref:"Video",
-    },
-    owner:{
-        type:Schema.Types.ObjectId,
-        ref:"User",
-    }
-},
-{timestamps:true});
+        const commentSchema=new Schema({
+            content:{
+                type:String,
+                required:true,
+            },
+            video:{
+                type:Schema.Types.ObjectId,
+                ref:"Video",
+            },
+            owner:{
+                type:Schema.Types.ObjectId,
+                ref:"User",
+            }
+        },
+        {timestamps:true});
 
-videoSchema.plugin(mongooseAggregatePaginate);
+        videoSchema.plugin(mongooseAggregatePaginate);
 
-export const Comment=mongoose.model("Comment",commentSchema);
+        export const Comment=mongoose.model("Comment",commentSchema);
 
 - src/models/like.models.js -  
 
-import mongoose,{Schema} from "mongoose"
+        import mongoose,{Schema} from "mongoose"
 
-const likeSchema=new Schema({
-    video:{
-        type:Schema.Types.ObjectId,
-        ref:"Video",
-    },
-    comment:{
-        type:Schema.Types.ObjectId,
-        ref:"Comment",
-    },
-    tweet:{
-        type:Schema.Types.ObjectId,
-        ref:"Tweet",
-    },
-    likedBy:{
-        type:Schema.Types.ObjectId,
-        ref:"User",
-    }
-},
-{timestamps:true});
+        const likeSchema=new Schema({
+            video:{
+                type:Schema.Types.ObjectId,
+                ref:"Video",
+            },
+            comment:{
+                type:Schema.Types.ObjectId,
+                ref:"Comment",
+            },
+            tweet:{
+                type:Schema.Types.ObjectId,
+                ref:"Tweet",
+            },
+            likedBy:{
+                type:Schema.Types.ObjectId,
+                ref:"User",
+            }
+        },
+        {timestamps:true});
 
-export const Like=mongoose.model("Like",likeSchema);
+        export const Like=mongoose.model("Like",likeSchema);
 
 - src/playlist.models.js -  
 
-import mongoose,{Schema} from "mongoose"
+        import mongoose,{Schema} from "mongoose"
 
-const playlistSchema=new Schema({
-    name:{
-        type:String,
-        required:true,
-    },
-    description:{
-        type:String,
-        required:true,
-    },
-    videos:[
-        {
-            type:Schema.Types.ObjectId,
-            ref:"Video",
+        const playlistSchema=new Schema({
+            name:{
+                type:String,
+                required:true,
+            },
+            description:{
+                type:String,
+                required:true,
+            },
+            videos:[
+                {
+                    type:Schema.Types.ObjectId,
+                    ref:"Video",
+                },
+            ],
+            owner:{
+                type:Schema.Types.ObjectId,
+                ref:"User",
+            }
         },
-    ],
-    owner:{
-        type:Schema.Types.ObjectId,
-        ref:"User",
-    }
-},
-{timestamps:true});
+        {timestamps:true});
 
-export const Playlist=mongoose.model("Playlist",playlistSchema);
+        export const Playlist=mongoose.model("Playlist",playlistSchema);
 
 - src/models/tweet.models.js -  
 
-import mongoose,{Schema} from "mongoose"
+        import mongoose,{Schema} from "mongoose"
 
-const tweetSchema=new Schema({
-    content:{
-        type:String,
-        required:true,
-    },
-    owner:{
-        type:Schema.Types.ObjectId,
-        ref:"User",
-    },
-},
-{timestamps:true});
+        const tweetSchema=new Schema({
+            content:{
+                type:String,
+                required:true,
+            },
+            owner:{
+                type:Schema.Types.ObjectId,
+                ref:"User",
+            },
+        },
+        {timestamps:true});
 
-export const Tweet=mongoose.model("Tweet",tweetSchema);
+        export const Tweet=mongoose.model("Tweet",tweetSchema);
 
 ## Lec 20 - Assignments  
 
